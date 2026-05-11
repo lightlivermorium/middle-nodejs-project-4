@@ -13,11 +13,17 @@ const makeFilename = (url) => {
   return `${sanitizedName}.html`;
 };
 
-const makeAssetsDirname = (url) => makeFilename(url).replace(/\.html$/, '_files');
+const makeAssetsDirname = (url) =>
+  makeFilename(url).replace(/\.html$/, '_files');
 
 const makeAssetFilename = (url) => {
   const { hostname, pathname } = new URL(url);
   const extension = path.extname(pathname);
+
+  if (!extension) {
+    return makeFilename(url);
+  }
+
   const pathnameWithoutExtension = extension
     ? pathname.slice(0, -extension.length)
     : pathname;

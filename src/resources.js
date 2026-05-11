@@ -5,49 +5,63 @@ const cheerio = require('cheerio');
 
 const { makeAssetFilename } = require('./filename');
 
-const isLocalImageUrl = (resourceUrl, pageUrl) => {
+const resourceDefinitions = [
+  { selector: 'img[src]', attribute: 'src' },
+  { selector: 'script[src]', attribute: 'src' },
+  { selector: 'link[href]', attribute: 'href' },
+];
+
+const isLocalResourceUrl = (resourceUrl, pageUrl) => {
   const resolvedResourceUrl = new URL(resourceUrl, pageUrl);
-  const pageOrigin = new URL(pageUrl).origin;
+  const pageHost = new URL(pageUrl).host;
 
   return (
-    ['http:', 'https:'].includes(resolvedResourceUrl.protocol)
-    && resolvedResourceUrl.origin === pageOrigin
+    ['http:', 'https:'].includes(resolvedResourceUrl.protocol) &&
+    resolvedResourceUrl.host === pageHost
   );
 };
 
-const collectLocalImages = ($, pageUrl, assetsDirname) => {
+const collectLocalResources = ($, pageUrl, assetsDirname) => {
   const resources = new Map();
 
-  $('img[src]').each((_, element) => {
-    const currentSrc = $(element).attr('src');
+  resourceDefinitions.forEach(({ selector, attribute }) => {
+    $(selector).each((_, element) => {
+      const currentValue = $(element).attr(attribute);
 
-    if (!currentSrc || !isLocalImageUrl(currentSrc, pageUrl)) {
-      return;
-    }
+      if (!currentValue || !isLocalResourceUrl(currentValue, pageUrl)) {
+        return;
+      }
 
-    const resourceUrl = new URL(currentSrc, pageUrl);
-    const filename = makeAssetFilename(resourceUrl.href);
-    const localPath = path.posix.join(assetsDirname, filename);
+      const resourceUrl = new URL(currentValue, pageUrl);
+      const filename = makeAssetFilename(resourceUrl.href);
+      const localPath = path.posix.join(assetsDirname, filename);
 
-    $(element).attr('src', localPath);
+      $(element).attr(attribute, localPath);
 
-    resources.set(resourceUrl.href, {
-      url: resourceUrl.href,
-      filename,
+      resources.set(resourceUrl.href, {
+        url: resourceUrl.href,
+        filename,
+      });
     });
   });
 
   return [...resources.values()];
 };
 
-const downloadResource = (resource, assetsDirPath) =>
-  axios
-    .get(resource.url, { responseType: 'arraybuffer' })
-    .then((response) =>
-      fs.writeFile(path.join(assetsDirPath, resource.filename), response.data),
-    );
+const downloadResource = (resource, assetsDirPath, pageUrl, pageHtml) => {
+  const contentPromise =
+    resource.url === pageUrl
+      ? Promise.resolve(pageHtml)
+      : axios
+          .get(resource.url, { responseType: 'arraybuffer' })
+          .then((response) => response.data);
 
-const downloadResources = (resources, assetsDirPath) => {
+  return contentPromise.then((content) =>
+    fs.writeFile(path.join(assetsDirPath, resource.filename), content),
+  );
+};
+
+const downloadResources = (resources, assetsDirPath, pageUrl, pageHtml) => {
   if (resources.length === 0) {
     return Promise.resolve();
   }
@@ -55,20 +69,31 @@ const downloadResources = (resources, assetsDirPath) => {
   return fs
     .mkdir(assetsDirPath, { recursive: true })
     .then(() =>
-      Promise.all(resources.map((resource) => downloadResource(resource, assetsDirPath))),
+      Promise.all(
+        resources.map((resource) =>
+          downloadResource(resource, assetsDirPath, pageUrl, pageHtml),
+        ),
+      ),
     )
     .then(() => undefined);
 };
 
 const prepareHtml = (html, pageUrl, assetsDirPath, assetsDirname) => {
   const $ = cheerio.load(html);
-  const resources = collectLocalImages($, pageUrl, assetsDirname);
+  const normalizedPageUrl = new URL(pageUrl).href;
+  const resources = collectLocalResources($, normalizedPageUrl, assetsDirname);
+  const preparedHtml = $.html();
 
   if (resources.length === 0) {
     return Promise.resolve(html);
   }
 
-  return downloadResources(resources, assetsDirPath).then(() => $.html());
+  return downloadResources(
+    resources,
+    assetsDirPath,
+    normalizedPageUrl,
+    preparedHtml,
+  ).then(() => preparedHtml);
 };
 
 module.exports = {
