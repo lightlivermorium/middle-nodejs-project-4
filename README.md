@@ -19,6 +19,12 @@ page-loader -d https://ru.hexlet.io/courses
 ```
 [![asciicast](https://asciinema.org/a/1038364.svg)](https://asciinema.org/a/1038364)
 
+## Errors handling
+```bash
+page-loader https://ru.hexlet.io/courses-missing
+```
+[![asciicast](https://asciinema.org/a/1038789.svg)](https://asciinema.org/a/1038789)
+
 ## Debug logging
 Run tests with cli, axios and nock logs enabled:
 ```bash

@@ -4,8 +4,28 @@ const axios = require('axios');
 
 const makeFilename = require('./filename');
 const { makeAssetsDirname } = require('./filename');
+const {
+  normalizeRequestError,
+  normalizeCreateDirectoryError,
+  normalizeWriteFileError,
+} = require('./errors');
 const log = require('./logger');
 const { prepareHtml } = require('./resources');
+
+const createDirectory = (directoryPath) =>
+  fs.mkdir(directoryPath, { recursive: true }).catch((error) => {
+    throw normalizeCreateDirectoryError(directoryPath, error);
+  });
+
+const requestPage = (url) =>
+  axios.get(url, { responseType: 'text' }).catch((error) => {
+    throw normalizeRequestError('page', url, error);
+  });
+
+const writeHtmlFile = (filePath, html) =>
+  fs.writeFile(filePath, html, 'utf-8').catch((error) => {
+    throw normalizeWriteFileError(filePath, error);
+  });
 
 const pageLoader = (url, outputDir = process.cwd()) => {
   const filename = makeFilename(url);
@@ -16,11 +36,10 @@ const pageLoader = (url, outputDir = process.cwd()) => {
   log('start download: url=%s outputDir=%s', url, outputDir);
   log('resolved paths: html=%s assets=%s', filePath, assetsDirPath);
 
-  return fs
-    .mkdir(path.dirname(filePath), { recursive: true })
+  return createDirectory(path.dirname(filePath))
     .then(() => {
       log('requesting page html: %s', url);
-      return axios.get(url, { responseType: 'text' });
+      return requestPage(url);
     })
     .then((response) => {
       log('page html received: status=%d url=%s', response.status, url);
@@ -28,14 +47,20 @@ const pageLoader = (url, outputDir = process.cwd()) => {
     })
     .then((html) => {
       log('writing html file: %s', filePath);
-      return fs.writeFile(filePath, html, 'utf-8');
+      return writeHtmlFile(filePath, html);
     })
     .then(() => {
       log('page saved: %s', filePath);
       return filePath;
     })
     .catch((error) => {
-      log('page download failed: url=%s error=%s', url, error.message);
+      log(
+        'page download failed: url=%s category=%s code=%s error=%s',
+        url,
+        error.category,
+        error.code,
+        error.message,
+      );
       throw error;
     });
 };

@@ -4,6 +4,11 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 const { makeAssetFilename } = require('./filename');
+const {
+  normalizeRequestError,
+  normalizeCreateDirectoryError,
+  normalizeWriteFileError,
+} = require('./errors');
 const log = require('./logger');
 
 const resourceDefinitions = [
@@ -60,6 +65,11 @@ const collectLocalResources = ($, pageUrl, assetsDirname) => {
   return [...resources.values()];
 };
 
+const writeResourceFile = (filePath, content) =>
+  fs.writeFile(filePath, content).catch((error) => {
+    throw normalizeWriteFileError(filePath, error);
+  });
+
 const downloadResource = (resource, assetsDirPath, pageUrl, pageHtml) => {
   const contentPromise =
     resource.url === pageUrl
@@ -75,14 +85,17 @@ const downloadResource = (resource, assetsDirPath, pageUrl, pageHtml) => {
               response.status,
             );
             return response.data;
+          })
+          .catch((error) => {
+            throw normalizeRequestError('resource', resource.url, error);
           }));
 
+  const targetPath = path.join(assetsDirPath, resource.filename);
+
   return contentPromise.then((content) =>
-    fs
-      .writeFile(path.join(assetsDirPath, resource.filename), content)
-      .then(() => {
-        log('resources: saved %s', path.join(assetsDirPath, resource.filename));
-      }),
+    writeResourceFile(targetPath, content).then(() => {
+      log('resources: saved %s', targetPath);
+    }),
   );
 };
 
@@ -93,6 +106,9 @@ const downloadResources = (resources, assetsDirPath, pageUrl, pageHtml) => {
 
   return fs
     .mkdir(assetsDirPath, { recursive: true })
+    .catch((error) => {
+      throw normalizeCreateDirectoryError(assetsDirPath, error);
+    })
     .then(() =>
       Promise.all(
         resources.map((resource) =>
@@ -127,7 +143,12 @@ const prepareHtml = (html, pageUrl, assetsDirPath, assetsDirname) => {
   )
     .then(() => preparedHtml)
     .catch((error) => {
-      log('resources: failed with error=%s', error.message);
+      log(
+        'resources: failed category=%s code=%s error=%s',
+        error.category,
+        error.code,
+        error.message,
+      );
       throw error;
     });
 };

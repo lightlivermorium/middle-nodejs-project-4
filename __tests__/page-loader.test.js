@@ -100,12 +100,19 @@ describe('pageLoader', () => {
   test('Reject when local resource does not exist', async () => {
     const url = 'https://ru.hexlet.io/courses';
     const html = await readFixture('page-with-missing-resource.html');
+    const missingResourceUrl = 'https://ru.hexlet.io/assets/missing-application.css';
+    const imageBuffer = Buffer.from([137, 80, 78, 71]);
 
     nock('https://ru.hexlet.io').get('/courses').reply(200, html);
+    nock('https://ru.hexlet.io')
+      .get('/assets/professions/nodejs.png')
+      .reply(200, imageBuffer, { 'Content-Type': 'image/png' });
     nock('https://ru.hexlet.io')
       .get('/assets/missing-application.css')
       .reply(404);
 
-    await expect(pageLoader(url, tmpDir)).rejects.toThrow();
+    await expect(pageLoader(url, tmpDir)).rejects.toThrow(
+      `failed to load resource: ${missingResourceUrl} (404)`,
+    );
   });
 });

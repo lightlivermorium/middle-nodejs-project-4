@@ -36,7 +36,7 @@ const [url] = positionals;
 
 if (!url) {
   console.error('Usage: page-loader [-d] [-o output] <url>');
-  process.exitCode = 1;
+  process.exit(1);
 } else {
   pageLoader(url, values.output)
     .then((filePath) => {
@@ -44,6 +44,6 @@ if (!url) {
     })
     .catch((error) => {
       console.error(error.message);
-      process.exitCode = 1;
+      process.exit(1);
     });
 }
