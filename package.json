@@ -8,8 +8,10 @@
   },
   "scripts": {
     "test": "jest --watchman=false",
+    "test:debug": "DEBUG=page-loader,axios NODE_DEBUG=nock:* jest --watchman=false --runInBand",
     "lint": "eslint .",
-    "test:watch": "jest --watch --watchman=false"
+    "test:watch": "jest --watch --watchman=false",
+    "page-loader:debug": "DEBUG=page-loader,axios node ./bin/page-loader.js"
   },
   "repository": {
     "type": "git",
@@ -25,7 +27,9 @@
   "homepage": "https://github.com/lightlivermorium/middle-nodejs-project-4#readme",
   "dependencies": {
     "axios": "^1.15.1",
-    "cheerio": "^1.2.0"
+    "cheerio": "^1.2.0",
+    "axios-debug-log": "^1.0.0",
+    "debug": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

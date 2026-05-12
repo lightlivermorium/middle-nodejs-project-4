@@ -2,11 +2,13 @@
 
 const { parseArgs } = require('node:util');
 
-const pageLoader = require('../src/page-loader');
-
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
   options: {
+    debug: {
+      type: 'boolean',
+      short: 'd',
+    },
     output: {
       type: 'string',
       short: 'o',
@@ -15,10 +17,25 @@ const { values, positionals } = parseArgs({
   allowPositionals: true,
 });
 
+if (values.debug) {
+  const debugNamespaces = new Set(
+    (process.env.DEBUG || '')
+      .split(',')
+      .map((namespace) => namespace.trim())
+      .filter(Boolean),
+  );
+
+  debugNamespaces.add('page-loader');
+  debugNamespaces.add('axios');
+  process.env.DEBUG = [...debugNamespaces].join(',');
+}
+
+const pageLoader = require('../src/page-loader');
+
 const [url] = positionals;
 
 if (!url) {
-  console.error('Usage: page-loader [-o output] <url>');
+  console.error('Usage: page-loader [-d] [-o output] <url>');
   process.exitCode = 1;
 } else {
   pageLoader(url, values.output)

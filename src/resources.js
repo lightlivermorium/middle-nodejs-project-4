@@ -4,6 +4,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 const { makeAssetFilename } = require('./filename');
+const log = require('./logger');
 
 const resourceDefinitions = [
   { selector: 'img[src]', attribute: 'src' },
@@ -28,7 +29,12 @@ const collectLocalResources = ($, pageUrl, assetsDirname) => {
     $(selector).each((_, element) => {
       const currentValue = $(element).attr(attribute);
 
-      if (!currentValue || !isLocalResourceUrl(currentValue, pageUrl)) {
+      if (!currentValue) {
+        return;
+      }
+
+      if (!isLocalResourceUrl(currentValue, pageUrl)) {
+        log('resources: skip external %s=%s', attribute, currentValue);
         return;
       }
 
@@ -37,6 +43,12 @@ const collectLocalResources = ($, pageUrl, assetsDirname) => {
       const localPath = path.posix.join(assetsDirname, filename);
 
       $(element).attr(attribute, localPath);
+      log(
+        'resources: rewrite %s %s -> %s',
+        attribute,
+        resourceUrl.href,
+        localPath,
+      );
 
       resources.set(resourceUrl.href, {
         url: resourceUrl.href,
@@ -51,13 +63,26 @@ const collectLocalResources = ($, pageUrl, assetsDirname) => {
 const downloadResource = (resource, assetsDirPath, pageUrl, pageHtml) => {
   const contentPromise =
     resource.url === pageUrl
-      ? Promise.resolve(pageHtml)
-      : axios
+      ? (log('resources: reuse page html for %s', resource.url),
+        Promise.resolve(pageHtml))
+      : (log('resources: download %s', resource.url),
+        axios
           .get(resource.url, { responseType: 'arraybuffer' })
-          .then((response) => response.data);
+          .then((response) => {
+            log(
+              'resources: downloaded %s status=%d',
+              resource.url,
+              response.status,
+            );
+            return response.data;
+          }));
 
   return contentPromise.then((content) =>
-    fs.writeFile(path.join(assetsDirPath, resource.filename), content),
+    fs
+      .writeFile(path.join(assetsDirPath, resource.filename), content)
+      .then(() => {
+        log('resources: saved %s', path.join(assetsDirPath, resource.filename));
+      }),
   );
 };
 
@@ -83,6 +108,12 @@ const prepareHtml = (html, pageUrl, assetsDirPath, assetsDirname) => {
   const normalizedPageUrl = new URL(pageUrl).href;
   const resources = collectLocalResources($, normalizedPageUrl, assetsDirname);
   const preparedHtml = $.html();
+  const resourceUrls = resources.map((resource) => resource.url);
+
+  log('resources: collected %d local resource(s)', resources.length);
+  if (resourceUrls.length > 0) {
+    log('resources: local resource list %o', resourceUrls);
+  }
 
   if (resources.length === 0) {
     return Promise.resolve(html);
@@ -93,7 +124,12 @@ const prepareHtml = (html, pageUrl, assetsDirPath, assetsDirname) => {
     assetsDirPath,
     normalizedPageUrl,
     preparedHtml,
-  ).then(() => preparedHtml);
+  )
+    .then(() => preparedHtml)
+    .catch((error) => {
+      log('resources: failed with error=%s', error.message);
+      throw error;
+    });
 };
 
 module.exports = {
