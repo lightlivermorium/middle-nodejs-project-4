@@ -27,7 +27,7 @@ const writeHtmlFile = (filePath, html) =>
     throw normalizeWriteFileError(filePath, error);
   });
 
-const pageLoader = (url, outputDir = process.cwd()) => {
+const pageLoader = (url, outputDir = process.cwd(), options = {}) => {
   const filename = makeFilename(url);
   const assetsDirname = makeAssetsDirname(url);
   const filePath = path.resolve(outputDir, filename);
@@ -43,7 +43,13 @@ const pageLoader = (url, outputDir = process.cwd()) => {
     })
     .then((response) => {
       log('page html received: status=%d url=%s', response.status, url);
-      return prepareHtml(response.data, url, assetsDirPath, assetsDirname);
+      return prepareHtml(
+        response.data,
+        url,
+        assetsDirPath,
+        assetsDirname,
+        options,
+      );
     })
     .then((html) => {
       log('writing html file: %s', filePath);

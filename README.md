@@ -30,3 +30,10 @@ Run tests with cli, axios and nock logs enabled:
 ```bash
 npm run test:debug
 ```
+
+## Progress
+```bash
+page-loader https://ru.hexlet.io/courses
+```
+
+[![asciicast](https://asciinema.org/a/1038871.svg)](https://asciinema.org/a/1038871)

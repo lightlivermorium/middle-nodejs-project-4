@@ -65,12 +65,26 @@ const collectLocalResources = ($, pageUrl, assetsDirname) => {
   return [...resources.values()];
 };
 
+const notify = (handler, ...args) => {
+  if (typeof handler === 'function') {
+    handler(...args);
+  }
+};
+
 const writeResourceFile = (filePath, content) =>
   fs.writeFile(filePath, content).catch((error) => {
     throw normalizeWriteFileError(filePath, error);
   });
 
-const downloadResource = (resource, assetsDirPath, pageUrl, pageHtml) => {
+const downloadResource = (
+  resource,
+  assetsDirPath,
+  pageUrl,
+  pageHtml,
+  options = {},
+) => {
+  notify(options.onResourceStart, resource);
+
   const contentPromise =
     resource.url === pageUrl
       ? (log('resources: reuse page html for %s', resource.url),
@@ -95,11 +109,21 @@ const downloadResource = (resource, assetsDirPath, pageUrl, pageHtml) => {
   return contentPromise.then((content) =>
     writeResourceFile(targetPath, content).then(() => {
       log('resources: saved %s', targetPath);
+      notify(options.onResourceSuccess, resource);
     }),
-  );
+  ).catch((error) => {
+    notify(options.onResourceError, resource, error);
+    throw error;
+  });
 };
 
-const downloadResources = (resources, assetsDirPath, pageUrl, pageHtml) => {
+const downloadResources = (
+  resources,
+  assetsDirPath,
+  pageUrl,
+  pageHtml,
+  options = {},
+) => {
   if (resources.length === 0) {
     return Promise.resolve();
   }
@@ -112,14 +136,20 @@ const downloadResources = (resources, assetsDirPath, pageUrl, pageHtml) => {
     .then(() =>
       Promise.all(
         resources.map((resource) =>
-          downloadResource(resource, assetsDirPath, pageUrl, pageHtml),
+          downloadResource(resource, assetsDirPath, pageUrl, pageHtml, options),
         ),
       ),
     )
     .then(() => undefined);
 };
 
-const prepareHtml = (html, pageUrl, assetsDirPath, assetsDirname) => {
+const prepareHtml = (
+  html,
+  pageUrl,
+  assetsDirPath,
+  assetsDirname,
+  options = {},
+) => {
   const $ = cheerio.load(html);
   const normalizedPageUrl = new URL(pageUrl).href;
   const resources = collectLocalResources($, normalizedPageUrl, assetsDirname);
@@ -131,6 +161,8 @@ const prepareHtml = (html, pageUrl, assetsDirPath, assetsDirname) => {
     log('resources: local resource list %o', resourceUrls);
   }
 
+  notify(options.onResourcesDiscovered, resources);
+
   if (resources.length === 0) {
     return Promise.resolve(html);
   }
@@ -140,6 +172,7 @@ const prepareHtml = (html, pageUrl, assetsDirPath, assetsDirname) => {
     assetsDirPath,
     normalizedPageUrl,
     preparedHtml,
+    options,
   )
     .then(() => preparedHtml)
     .catch((error) => {
