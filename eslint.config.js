@@ -1,4 +1,5 @@
 const js = require('@eslint/js');
+const stylistic = require('@stylistic/eslint-plugin');
 const globals = require('globals');
 const eslintConfigPrettier = require('eslint-config-prettier');
 
@@ -17,8 +18,11 @@ module.exports = [
         ...globals.jest,
       },
     },
+    plugins: {
+      '@stylistic': stylistic,
+    },
     rules: {
-      'no-console': 'off',
+      '@stylistic/no-console': 'off',
     },
   },
   eslintConfigPrettier,
