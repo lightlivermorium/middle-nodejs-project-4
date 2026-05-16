@@ -46,13 +46,30 @@ const createProgressOptions = () => {
   let pageLoaderPromise;
   let resultPath;
 
+  const rejectTaskState = (taskState, error) => {
+    if (!taskState || taskState.done || taskState.error) {
+      return;
+    }
+
+    taskState.error = error;
+
+    if (taskState.reject) {
+      taskState.reject(error);
+    }
+  };
+
   return {
     start(loader) {
       if (!pageLoaderPromise) {
-        pageLoaderPromise = loader().then((filePath) => {
-          resultPath = filePath;
-          return filePath;
-        });
+        pageLoaderPromise = loader()
+          .then((filePath) => {
+            resultPath = filePath;
+            return filePath;
+          })
+          .catch((error) => {
+            resourceTasks.forEach((taskState) => rejectTaskState(taskState, error));
+            throw error;
+          });
       }
 
       return pageLoaderPromise;
@@ -99,6 +116,10 @@ const createProgressOptions = () => {
                   reject(taskState.error);
                 } else if (taskState.done) {
                   resolve();
+                } else if (pageLoaderPromise) {
+                  pageLoaderPromise.catch((error) => {
+                    rejectTaskState(taskState, error);
+                  });
                 }
               }),
           };
