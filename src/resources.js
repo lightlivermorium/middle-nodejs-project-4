@@ -72,7 +72,7 @@ const notify = (handler, ...args) => {
 }
 
 const writeResourceFile = (filePath, content) =>
-  fs.writeFile(filePath, content).catch(error => {
+  fs.writeFile(filePath, content).catch((error) => {
     throw normalizeWriteFileError(filePath, error)
   })
 
@@ -92,7 +92,7 @@ const downloadResource = (
       : (log('resources: download %s', resource.url),
       axios
         .get(resource.url, { responseType: 'arraybuffer' })
-        .then(response => {
+        .then((response) => {
           log(
             'resources: downloaded %s status=%d',
             resource.url,
@@ -100,7 +100,7 @@ const downloadResource = (
           )
           return response.data
         })
-        .catch(error => {
+        .catch((error) => {
           throw normalizeRequestError('resource', resource.url, error)
         }))
 
@@ -111,7 +111,7 @@ const downloadResource = (
       log('resources: saved %s', targetPath)
       notify(options.onResourceSuccess, resource)
     }),
-  ).catch(error => {
+  ).catch((error) => {
     notify(options.onResourceError, resource, error)
     throw error
   })
@@ -130,7 +130,7 @@ const downloadResources = (
 
   return fs
     .mkdir(assetsDirPath)
-    .catch(error => {
+    .catch((error) => {
       throw normalizeCreateDirectoryError(assetsDirPath, error)
     })
     .then(() =>
@@ -175,7 +175,7 @@ const prepareHtml = (
     options,
   )
     .then(() => preparedHtml)
-    .catch(error => {
+    .catch((error) => {
       log(
         'resources: failed category=%s code=%s error=%s',
         error.category,

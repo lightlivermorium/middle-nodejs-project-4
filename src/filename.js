@@ -1,6 +1,6 @@
 const path = require('node:path')
 
-const makeFilename = url => {
+const makeFilename = (url) => {
   const { hostname, pathname } = new URL(url)
 
   const normalizedPath = pathname === '/' ? '' : pathname.replace(/\/+$/, '')
@@ -16,7 +16,7 @@ const makeFilename = url => {
 const makeAssetsDirname = url =>
   makeFilename(url).replace(/\.html$/, '_files')
 
-const makeAssetFilename = url => {
+const makeAssetFilename = (url) => {
   const { hostname, pathname } = new URL(url)
   const extension = path.extname(pathname)
 

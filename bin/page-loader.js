@@ -40,7 +40,7 @@ const createProgressOptions = () => {
   let resourceSubtasks = []
   let discoveredResources = null
   let resolveResourcesDiscovered
-  const resourcesDiscoveredPromise = new Promise(resolve => {
+  const resourcesDiscoveredPromise = new Promise((resolve) => {
     resolveResourcesDiscovered = resolve
   })
   let pageLoaderPromise
@@ -62,11 +62,11 @@ const createProgressOptions = () => {
     start(loader) {
       if (!pageLoaderPromise) {
         pageLoaderPromise = loader()
-          .then(filePath => {
+          .then((filePath) => {
             resultPath = filePath
             return filePath
           })
-          .catch(error => {
+          .catch((error) => {
             resourceTasks.forEach(taskState => rejectTaskState(taskState, error))
             throw error
           })
@@ -97,7 +97,7 @@ const createProgressOptions = () => {
     options: {
       onResourcesDiscovered(resources) {
         discoveredResources = resources
-        resourceSubtasks = resources.map(resource => {
+        resourceSubtasks = resources.map((resource) => {
           const taskState = {
             done: false,
             error: null,
@@ -115,11 +115,11 @@ const createProgressOptions = () => {
                 if (taskState.error) {
                   reject(taskState.error)
                 }
- else if (taskState.done) {
+                else if (taskState.done) {
                   resolve()
                 }
- else if (pageLoaderPromise) {
-                  pageLoaderPromise.catch(error => {
+                else if (pageLoaderPromise) {
+                  pageLoaderPromise.catch((error) => {
                     rejectTaskState(taskState, error)
                   })
                 }
@@ -166,7 +166,7 @@ if (!url) {
   console.error('Usage: page-loader [-d] [-o output] <url>')
   process.exit(1)
 }
- else {
+else {
   const progress = createProgressOptions()
 
   const tasks = new Listr(
@@ -210,7 +210,7 @@ if (!url) {
     .then(() => {
       console.log(progress.getResultPath())
     })
-    .catch(error => {
+    .catch((error) => {
       console.error(error.message)
       process.exit(1)
     })

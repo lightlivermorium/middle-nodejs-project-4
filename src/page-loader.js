@@ -12,12 +12,12 @@ const log = require('./logger')
 const { prepareHtml } = require('./resources')
 
 const requestPage = url =>
-  axios.get(url, { responseType: 'text' }).catch(error => {
+  axios.get(url, { responseType: 'text' }).catch((error) => {
     throw normalizeRequestError('page', url, error)
   })
 
 const writeHtmlFile = (filePath, html) =>
-  fs.writeFile(filePath, html, 'utf-8').catch(error => {
+  fs.writeFile(filePath, html, 'utf-8').catch((error) => {
     throw normalizeWriteFileError(filePath, error)
   })
 
@@ -31,7 +31,7 @@ const pageLoader = (url, outputDir = process.cwd(), options = {}) => {
   log('resolved paths: html=%s assets=%s', filePath, assetsDirPath)
 
   return requestPage(url)
-    .then(response => {
+    .then((response) => {
       log('page html received: status=%d url=%s', response.status, url)
       return prepareHtml(
         response.data,
@@ -41,7 +41,7 @@ const pageLoader = (url, outputDir = process.cwd(), options = {}) => {
         options,
       )
     })
-    .then(html => {
+    .then((html) => {
       log('writing html file: %s', filePath)
       return writeHtmlFile(filePath, html)
     })
@@ -49,7 +49,7 @@ const pageLoader = (url, outputDir = process.cwd(), options = {}) => {
       log('page saved: %s', filePath)
       return filePath
     })
-    .catch(error => {
+    .catch((error) => {
       log(
         'page download failed: url=%s category=%s code=%s error=%s',
         url,
