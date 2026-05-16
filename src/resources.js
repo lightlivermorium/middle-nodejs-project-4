@@ -171,7 +171,7 @@ const prepareHtml = (
     resources,
     assetsDirPath,
     normalizedPageUrl,
-    preparedHtml,
+    html,
     options,
   )
     .then(() => preparedHtml)
