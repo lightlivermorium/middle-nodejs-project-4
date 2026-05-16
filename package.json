@@ -9,8 +9,9 @@
   "scripts": {
     "test": "jest --watchman=false",
     "test:debug": "DEBUG=page-loader,axios NODE_DEBUG=nock:* jest --watchman=false --runInBand",
-    "lint": "eslint .",
     "test:watch": "jest --watch --watchman=false",
+    "test:coverage": "jest --watchman=false --coverage",
+    "lint": "eslint .",
     "page-loader:debug": "DEBUG=page-loader,axios node ./bin/page-loader.js"
   },
   "repository": {

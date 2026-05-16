@@ -6,16 +6,10 @@ const makeFilename = require('./filename');
 const { makeAssetsDirname } = require('./filename');
 const {
   normalizeRequestError,
-  normalizeCreateDirectoryError,
   normalizeWriteFileError,
 } = require('./errors');
 const log = require('./logger');
 const { prepareHtml } = require('./resources');
-
-const createDirectory = (directoryPath) =>
-  fs.mkdir(directoryPath, { recursive: true }).catch((error) => {
-    throw normalizeCreateDirectoryError(directoryPath, error);
-  });
 
 const requestPage = (url) =>
   axios.get(url, { responseType: 'text' }).catch((error) => {
@@ -36,11 +30,7 @@ const pageLoader = (url, outputDir = process.cwd(), options = {}) => {
   log('start download: url=%s outputDir=%s', url, outputDir);
   log('resolved paths: html=%s assets=%s', filePath, assetsDirPath);
 
-  return createDirectory(path.dirname(filePath))
-    .then(() => {
-      log('requesting page html: %s', url);
-      return requestPage(url);
-    })
+  return requestPage(url)
     .then((response) => {
       log('page html received: status=%d url=%s', response.status, url);
       return prepareHtml(

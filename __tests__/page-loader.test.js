@@ -115,4 +115,16 @@ describe('pageLoader', () => {
       `failed to load resource: ${missingResourceUrl} (404)`,
     );
   });
+
+  test('Reject when output directory does not exist', async () => {
+    const url = 'https://ru.hexlet.io/courses';
+    const html = await readFixture('page-with-local-resources.html');
+    const notExistingDir = path.join(tmpDir, 'not-exists');
+
+    nock('https://ru.hexlet.io').get('/courses').reply(200, html);
+
+    await expect(pageLoader(url, notExistingDir)).rejects.toThrow(
+      `cannot create directory: ${path.join(notExistingDir, 'ru-hexlet-io-courses_files')}`,
+    );
+  });
 });

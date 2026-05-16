@@ -129,7 +129,7 @@ const downloadResources = (
   }
 
   return fs
-    .mkdir(assetsDirPath, { recursive: true })
+    .mkdir(assetsDirPath)
     .catch((error) => {
       throw normalizeCreateDirectoryError(assetsDirPath, error);
     })
