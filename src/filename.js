@@ -24,9 +24,9 @@ const makeAssetFilename = (url) => {
     return makeFilename(url);
   }
 
-  const pathnameWithoutExtension = extension
-    ? pathname.slice(0, -extension.length)
-    : pathname;
+  const pathnameWithoutExtension = extension ?
+    pathname.slice(0, -extension.length) :
+    pathname;
   const rawName = `${hostname}${pathnameWithoutExtension}`;
 
   const sanitizedName = rawName

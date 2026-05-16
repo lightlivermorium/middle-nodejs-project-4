@@ -86,23 +86,23 @@ const downloadResource = (
   notify(options.onResourceStart, resource);
 
   const contentPromise =
-    resource.url === pageUrl
-      ? (log('resources: reuse page html for %s', resource.url),
-        Promise.resolve(pageHtml))
-      : (log('resources: download %s', resource.url),
-        axios
-          .get(resource.url, { responseType: 'arraybuffer' })
-          .then((response) => {
-            log(
-              'resources: downloaded %s status=%d',
-              resource.url,
-              response.status,
-            );
-            return response.data;
-          })
-          .catch((error) => {
-            throw normalizeRequestError('resource', resource.url, error);
-          }));
+    resource.url === pageUrl ?
+      (log('resources: reuse page html for %s', resource.url),
+      Promise.resolve(pageHtml)) :
+      (log('resources: download %s', resource.url),
+      axios
+        .get(resource.url, { responseType: 'arraybuffer' })
+        .then((response) => {
+          log(
+            'resources: downloaded %s status=%d',
+            resource.url,
+            response.status,
+          );
+          return response.data;
+        })
+        .catch((error) => {
+          throw normalizeRequestError('resource', resource.url, error);
+        }));
 
   const targetPath = path.join(assetsDirPath, resource.filename);
 

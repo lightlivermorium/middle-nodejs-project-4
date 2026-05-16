@@ -22,6 +22,10 @@ module.exports = [
     },
     rules: {
       'no-console': 'off',
+      '@stylistic/semi': ['error', 'always'],
+      '@stylistic/arrow-parens': ['error', 'always'],
+      '@stylistic/brace-style': ['error', '1tbs'],
+      '@stylistic/operator-linebreak': ['error', 'after'],
     },
   },
 ];
