@@ -76,6 +76,24 @@ const writeResourceFile = (filePath, content) =>
     throw normalizeWriteFileError(filePath, error)
   })
 
+const requestResourceContent = (resource) => {
+  log('resources: download %s', resource.url)
+
+  return axios
+    .get(resource.url, { responseType: 'arraybuffer' })
+    .then((response) => {
+      log(
+        'resources: downloaded %s status=%d',
+        resource.url,
+        response.status,
+      )
+      return response.data
+    })
+    .catch((error) => {
+      throw normalizeRequestError('resource', resource.url, error)
+    })
+}
+
 const downloadResource = (
   resource,
   assetsDirPath,
@@ -85,28 +103,15 @@ const downloadResource = (
 ) => {
   notify(options.onResourceStart, resource)
 
-  const contentPromise
-    = resource.url === pageUrl
-      ? (
-        log('resources: reuse page html for %s', resource.url),
-        Promise.resolve(pageHtml)
-      )
-      : (
-        log('resources: download %s', resource.url),
-        axios
-          .get(resource.url, { responseType: 'arraybuffer' })
-          .then((response) => {
-            log(
-              'resources: downloaded %s status=%d',
-              resource.url,
-              response.status
-            )
-            return response.data
-          })
-          .catch((error) => {
-            throw normalizeRequestError('resource', resource.url, error)
-          })
-      )
+  let contentPromise
+
+  if (resource.url === pageUrl) {
+    log('resources: reuse page html for %s', resource.url)
+    contentPromise = Promise.resolve(pageHtml)
+  }
+  else {
+    contentPromise = requestResourceContent(resource)
+  }
 
   const targetPath = path.join(assetsDirPath, resource.filename)
 
