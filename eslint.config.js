@@ -1,6 +1,6 @@
-const js = require('@eslint/js');
-const stylistic = require('@stylistic/eslint-plugin');
-const globals = require('globals');
+const js = require('@eslint/js')
+const stylistic = require('@stylistic/eslint-plugin')
+const globals = require('globals')
 
 module.exports = [
   {
@@ -22,10 +22,10 @@ module.exports = [
     },
     rules: {
       'no-console': 'off',
-      '@stylistic/semi': ['error', 'always'],
-      '@stylistic/arrow-parens': ['error', 'always'],
-      '@stylistic/brace-style': ['error', '1tbs'],
-      '@stylistic/operator-linebreak': ['error', 'after'],
+      '@stylistic/semi': ['error', 'never'],
+      '@stylistic/arrow-parens': ['error', 'as-needed'],
+      '@stylistic/brace-style': ['error', 'stroustrup'],
+      '@stylistic/operator-linebreak': ['error', 'before'],
     },
   },
-];
+]

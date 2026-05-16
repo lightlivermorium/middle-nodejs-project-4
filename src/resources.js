@@ -1,80 +1,80 @@
-const path = require('node:path');
-const fs = require('node:fs/promises');
-const axios = require('axios');
-const cheerio = require('cheerio');
+const path = require('node:path')
+const fs = require('node:fs/promises')
+const axios = require('axios')
+const cheerio = require('cheerio')
 
-const { makeAssetFilename } = require('./filename');
+const { makeAssetFilename } = require('./filename')
 const {
   normalizeRequestError,
   normalizeCreateDirectoryError,
   normalizeWriteFileError,
-} = require('./errors');
-const log = require('./logger');
+} = require('./errors')
+const log = require('./logger')
 
 const resourceDefinitions = [
   { selector: 'img[src]', attribute: 'src' },
   { selector: 'script[src]', attribute: 'src' },
   { selector: 'link[href]', attribute: 'href' },
-];
+]
 
 const isLocalResourceUrl = (resourceUrl, pageUrl) => {
-  const resolvedResourceUrl = new URL(resourceUrl, pageUrl);
-  const pageHost = new URL(pageUrl).host;
+  const resolvedResourceUrl = new URL(resourceUrl, pageUrl)
+  const pageHost = new URL(pageUrl).host
 
   return (
-    ['http:', 'https:'].includes(resolvedResourceUrl.protocol) &&
-    resolvedResourceUrl.host === pageHost
-  );
-};
+    ['http:', 'https:'].includes(resolvedResourceUrl.protocol)
+    && resolvedResourceUrl.host === pageHost
+  )
+}
 
 const collectLocalResources = ($, pageUrl, assetsDirname) => {
-  const resources = new Map();
+  const resources = new Map()
 
   resourceDefinitions.forEach(({ selector, attribute }) => {
     $(selector).each((_, element) => {
-      const currentValue = $(element).attr(attribute);
+      const currentValue = $(element).attr(attribute)
 
       if (!currentValue) {
-        return;
+        return
       }
 
       if (!isLocalResourceUrl(currentValue, pageUrl)) {
-        log('resources: skip external %s=%s', attribute, currentValue);
-        return;
+        log('resources: skip external %s=%s', attribute, currentValue)
+        return
       }
 
-      const resourceUrl = new URL(currentValue, pageUrl);
-      const filename = makeAssetFilename(resourceUrl.href);
-      const localPath = path.posix.join(assetsDirname, filename);
+      const resourceUrl = new URL(currentValue, pageUrl)
+      const filename = makeAssetFilename(resourceUrl.href)
+      const localPath = path.posix.join(assetsDirname, filename)
 
-      $(element).attr(attribute, localPath);
+      $(element).attr(attribute, localPath)
       log(
         'resources: rewrite %s %s -> %s',
         attribute,
         resourceUrl.href,
         localPath,
-      );
+      )
 
       resources.set(resourceUrl.href, {
         url: resourceUrl.href,
         filename,
-      });
-    });
-  });
+      })
+    })
+  })
 
-  return [...resources.values()];
-};
+  return [...resources.values()]
+}
 
 const notify = (handler, ...args) => {
   if (typeof handler === 'function') {
-    handler(...args);
+    handler(...args)
   }
-};
+}
 
 const writeResourceFile = (filePath, content) =>
-  fs.writeFile(filePath, content).catch((error) => {
-    throw normalizeWriteFileError(filePath, error);
-  });
+  fs.writeFile(filePath, content).catch(error => {
+    throw normalizeWriteFileError(filePath, error)
+  })
 
 const downloadResource = (
   resource,
@@ -83,39 +83,39 @@ const downloadResource = (
   pageHtml,
   options = {},
 ) => {
-  notify(options.onResourceStart, resource);
+  notify(options.onResourceStart, resource)
 
-  const contentPromise =
-    resource.url === pageUrl ?
-      (log('resources: reuse page html for %s', resource.url),
-      Promise.resolve(pageHtml)) :
-      (log('resources: download %s', resource.url),
+  const contentPromise
+    = resource.url === pageUrl
+      ? (log('resources: reuse page html for %s', resource.url),
+      Promise.resolve(pageHtml))
+      : (log('resources: download %s', resource.url),
       axios
         .get(resource.url, { responseType: 'arraybuffer' })
-        .then((response) => {
+        .then(response => {
           log(
             'resources: downloaded %s status=%d',
             resource.url,
             response.status,
-          );
-          return response.data;
+          )
+          return response.data
         })
-        .catch((error) => {
-          throw normalizeRequestError('resource', resource.url, error);
-        }));
+        .catch(error => {
+          throw normalizeRequestError('resource', resource.url, error)
+        }))
 
-  const targetPath = path.join(assetsDirPath, resource.filename);
+  const targetPath = path.join(assetsDirPath, resource.filename)
 
-  return contentPromise.then((content) =>
+  return contentPromise.then(content =>
     writeResourceFile(targetPath, content).then(() => {
-      log('resources: saved %s', targetPath);
-      notify(options.onResourceSuccess, resource);
+      log('resources: saved %s', targetPath)
+      notify(options.onResourceSuccess, resource)
     }),
-  ).catch((error) => {
-    notify(options.onResourceError, resource, error);
-    throw error;
-  });
-};
+  ).catch(error => {
+    notify(options.onResourceError, resource, error)
+    throw error
+  })
+}
 
 const downloadResources = (
   resources,
@@ -125,23 +125,23 @@ const downloadResources = (
   options = {},
 ) => {
   if (resources.length === 0) {
-    return Promise.resolve();
+    return Promise.resolve()
   }
 
   return fs
     .mkdir(assetsDirPath)
-    .catch((error) => {
-      throw normalizeCreateDirectoryError(assetsDirPath, error);
+    .catch(error => {
+      throw normalizeCreateDirectoryError(assetsDirPath, error)
     })
     .then(() =>
       Promise.all(
-        resources.map((resource) =>
+        resources.map(resource =>
           downloadResource(resource, assetsDirPath, pageUrl, pageHtml, options),
         ),
       ),
     )
-    .then(() => undefined);
-};
+    .then(() => undefined)
+}
 
 const prepareHtml = (
   html,
@@ -150,21 +150,21 @@ const prepareHtml = (
   assetsDirname,
   options = {},
 ) => {
-  const $ = cheerio.load(html);
-  const normalizedPageUrl = new URL(pageUrl).href;
-  const resources = collectLocalResources($, normalizedPageUrl, assetsDirname);
-  const preparedHtml = $.html();
-  const resourceUrls = resources.map((resource) => resource.url);
+  const $ = cheerio.load(html)
+  const normalizedPageUrl = new URL(pageUrl).href
+  const resources = collectLocalResources($, normalizedPageUrl, assetsDirname)
+  const preparedHtml = $.html()
+  const resourceUrls = resources.map(resource => resource.url)
 
-  log('resources: collected %d local resource(s)', resources.length);
+  log('resources: collected %d local resource(s)', resources.length)
   if (resourceUrls.length > 0) {
-    log('resources: local resource list %o', resourceUrls);
+    log('resources: local resource list %o', resourceUrls)
   }
 
-  notify(options.onResourcesDiscovered, resources);
+  notify(options.onResourcesDiscovered, resources)
 
   if (resources.length === 0) {
-    return Promise.resolve(html);
+    return Promise.resolve(html)
   }
 
   return downloadResources(
@@ -175,17 +175,17 @@ const prepareHtml = (
     options,
   )
     .then(() => preparedHtml)
-    .catch((error) => {
+    .catch(error => {
       log(
         'resources: failed category=%s code=%s error=%s',
         error.category,
         error.code,
         error.message,
-      );
-      throw error;
-    });
-};
+      )
+      throw error
+    })
+}
 
 module.exports = {
   prepareHtml,
-};
+}
