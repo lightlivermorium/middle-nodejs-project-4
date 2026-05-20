@@ -9,7 +9,8 @@
 
 ## Base example
 ```bash
-page-loader https://ru.hexlet.io/courses
+page-loader https://ru.hexlet.io/courses -o $PWD/tmp
+page-loader https://www.york.ac.uk/teaching/cws/wws/webpage1.html -o $PWD/tmp
 ```
 
 [![asciicast](https://asciinema.org/a/1011688.svg)](https://asciinema.org/a/1011688)

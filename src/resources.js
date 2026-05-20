@@ -173,7 +173,7 @@ const prepareHtml = (
   notify(options.onResourcesDiscovered, resources)
 
   if (resources.length === 0) {
-    return Promise.resolve(html)
+    return Promise.resolve(preparedHtml)
   }
 
   return downloadResources(
